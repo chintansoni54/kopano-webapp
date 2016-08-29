@@ -122,9 +122,9 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 		var topToolbar = activeItem.getTopToolbar();
 		var parentSearchField;
 
-		if(Ext.isDefined(topToolbar) && Ext.isDefined(parentSearchField = topToolbar.searchTextfield)) {
+		if (Ext.isDefined(topToolbar) && Ext.isDefined(parentSearchField = topToolbar.searchTextfield)) {
 			this.searchContentPanel.setParentSearchField(parentSearchField);
-		}else {
+		} else {
 			this.searchContentPanel.setParentSearchField(undefined);
 		}
 	},
@@ -137,7 +137,7 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	onBeforeCloseContentPanel : function(contentPanel)
 	{
 		var parentSearchField = this.resetParentSearchField();
-		if(parentSearchField) {
+		if (parentSearchField) {
 			parentSearchField.renderedSearchPanel = false;
 		}
 
@@ -149,7 +149,7 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 		 */
 		var currentSearchStore = false;
 		var model = this.model;
-		if(model.getActiveStore().getSearchStoreUniqueId() !== contentPanel.name){
+		if (model.getActiveStore().getSearchStoreUniqueId() !== contentPanel.name){
 			currentSearchStore = this.model.store;
 			var store = model.stores[contentPanel.name];
 			model.setActiveStore(store);
@@ -161,7 +161,7 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 		 * Model has hold the selected record in Zarafa.core.ContextModel.selectedRecords config
 		 * so when close the search panel we have to clear the selection manually.
 		 */
-		if(Ext.isDefined(model.getSelectedRecords())) {
+		if (Ext.isDefined(model.getSelectedRecords())) {
 			model.setSelectedRecords(undefined);
 		}
 
@@ -200,7 +200,7 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	resetParentSearchField : function()
 	{
 		var parentSearchField = this.searchContentPanel.getParentSearchField();
-		if(Ext.isDefined(parentSearchField)) {
+		if (Ext.isDefined(parentSearchField)) {
 			parentSearchField.reset();
 			parentSearchField.doStop(false);
 			return parentSearchField;
@@ -250,7 +250,7 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 		}
 
 		var restriction = this.searchToolBox.createRestriction(searchText);
-		var folder = this.searchToolBox.getFolder();
+		var folder = container.getHierarchyStore().getFolder(advanceSearchField.getFolderComboValue());
 		this.model.startSearch(restriction , folder.isIPMSubTree(), {'folder' : folder});
 
 		// if search is performed from the parent search field then, it will set the search tab
@@ -267,7 +267,7 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	onSearchStop : function()
 	{
 		this.model.stopSearch();
-		if(Ext.isDefined(this.searchToolbar)) {
+		if (Ext.isDefined(this.searchToolbar)) {
 			this.searchToolbar.getAdvanceSearchField().focus();
 		}
 	},
@@ -283,7 +283,7 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 		searchField.renderedSearchPanel = this.rendered;
 
 		// Trigger search operation.
-		searchField.onTriggerClick();
+		searchField.onTrigger2Click();
 	},
 
 	/**
@@ -292,7 +292,7 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	 */
 	onAfterUpdateRestriction : function()
 	{
-		this.searchToolbar.getAdvanceSearchField().onTriggerClick();
+		this.searchToolbar.getAdvanceSearchField().onTrigger2Click();
 	},
 
 	/**
@@ -304,6 +304,16 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	onRenderAdvanceSearchTextField : function(advanceSearchField)
 	{
 		advanceSearchField.setValue(this.searchText);
+		var parentSearchField = this.searchContentPanel.getParentSearchField();
+		advanceSearchField.store.clearData();
+		parentSearchField.store.getRange().forEach(function (record) {
+			advanceSearchField.store.add(record.copy());
+		});
+		advanceSearchField.view.refresh();
+		var parentSearchDropDownValue = parentSearchField.getFolderComboValue();
+		if (!Zarafa.core.EntryId.compareEntryIds(parentSearchDropDownValue ,advanceSearchField.getFolderComboValue())) {
+			advanceSearchField.setFolderComboValue(parentSearchDropDownValue);
+		}
 	},
 
 	/**
@@ -346,13 +356,13 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 		var rightToolbar = this.searchToolbar.getRightSearchToolbar();
 		rightToolbar.setVisible(!!record);
 
-		if(record) {
+		if (record) {
 			var isFaultyMessage = record.isFaultyMessage();
 			var isMessageReplyable = Zarafa.core.MessageClass.isClass(record.get('message_class'), ['IPM.NOTE', 'REPORT.IPM', 'IPM.SCHEDULE', 'IPM.APPOINTMENT']);
 
 			// Additional check when the message is IPM.Appointment and not a meeting request
 			// but a simple appointment which can not be replied as there is no reply-to recipients available.
-			if(isMessageReplyable && Zarafa.core.MessageClass.isClass(record.get('message_class'), ['IPM.APPOINTMENT'])) {
+			if (isMessageReplyable && Zarafa.core.MessageClass.isClass(record.get('message_class'), ['IPM.APPOINTMENT'])) {
 				if(!record.isMeeting()){
 					isMessageReplyable = false;
 				}
