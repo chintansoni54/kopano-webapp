@@ -4,8 +4,6 @@
 	.x-form-trigger.icon_search {
 		background-color: transparent;
 		width: $button-small-height;
-		height: $button-small-height !important;
-		box-sizing: border-box;
 		border: 1px solid transparent;
 		border-top-right-radius: 2px;
 		border-bottom-right-radius: 2px;
@@ -271,3 +269,8 @@
 	padding-left: 10px !important;
 }
 
+.zarafa-searchfield-folders {
+	width : 80px;
+	padding-top: 0px !important;
+	border-left : none;
+}
