@@ -178,7 +178,7 @@ Zarafa.common.ui.SearchField = Ext.extend(Ext.form.TwinTriggerField, {
 	{
 		Zarafa.common.ui.SearchField.superclass.initEvents.apply(this, arguments);
 		this.on('specialkey', this.onTriggerSpecialKey, this);
-		this.mon(this.model, 'folderchange', this.onFolderChange, this);
+		this.mon(container, 'folderselect', this.onFolderSelect, this);
 		this.mon(this.getFolderCombo(), 'blur', this.onBlurSearchComboBox, this, {delay: 10});
 		this.mon(this.getFolderCombo(), 'click', this.onClickSelectFolderComboBox, this, {delay: 10});
 	},
@@ -208,7 +208,7 @@ Zarafa.common.ui.SearchField = Ext.extend(Ext.form.TwinTriggerField, {
 		if (Ext.isDefined(defaultFolder)) {
 			folderName = defaultFolder.getDisplayName();
 			folderEntryid = defaultFolder.get('entryid');
-			if (!defaultFolder.getMAPIStore().isDefaultStore()) {
+			if (defaultFolder.getDefaultFolderKey() !== 'inbox') {
 				index = 1;
 			}
 		}
@@ -265,24 +265,23 @@ Zarafa.common.ui.SearchField = Ext.extend(Ext.form.TwinTriggerField, {
 	},
 
 	/**
-	 * Event handler triggers when folder was get changed in hierarchy. Handler is responsible to set/change the
-	 * current folder in search folder ComboBox list.
+	 * Event handler which is triggered when the context or folder is changed.
+	 * Handler is responsible to set/change the current folder in search folder ComboBox list.
 	 *
-	 * @param {Zarafa.core.ContextModel} model The model which fired the event.
-	 * @param {Array} folders selected folders as an array of {@link Zarafa.hierarchy.data.MAPIFolderRecord Folder} objects.
+	 * @param {Array} folder selected {@link Zarafa.hierarchy.data.MAPIFolderRecord Folder} objects.
 	 * @private
 	 */
-	onFolderChange : function (model, folders)
+	onFolderSelect: function (folder)
 	{
 		if (this.ownerCt instanceof Zarafa.advancesearch.ui.SearchPanelToolbar) {
 			return;
 		}
-
-		var folder = folders[0];
+		if (Ext.isArray(folder) && !Ext.isEmpty(folder)) {
+			folder = folder[0];
+		} else {
+			return;
+		}
 		var currentFolder = this.store.getAt(this.store.find('flag', Zarafa.advancesearch.data.SearchComboBoxFieldsFlags.CURRENT_SELECTED_FOLDER));
-		// isCurrentFolderSelected is get's true if search folder combo box has selected selected folder in hierarchy.
-		var isCurrentFolderSelected = Zarafa.core.EntryId.compareEntryIds(currentFolder.get('value'), this.getFolderComboValue());
-		var lastSelectedFolder = container.getHierarchyStore().getFolder(currentFolder.get('value'));
 
 		currentFolder.beginEdit();
 		currentFolder.set("name", folder.getDisplayName());
@@ -292,13 +291,12 @@ Zarafa.common.ui.SearchField = Ext.extend(Ext.form.TwinTriggerField, {
 		currentFolder.commit();
 
 		this.store.reMap(currentFolder);
-		// Update the search folder combo box value if isCurrentFolderSelected is true and selected folder
-		// is not default folder.
-		var allFolderRecord = this.store.getAt(this.store.find('flag', Zarafa.advancesearch.data.SearchComboBoxFieldsFlags.ALL_FOLDERS));
-		var isDefaultFolder = folder.getMAPIStore().isDefaultStore();
-		if (!Ext.isDefined(lastSelectedFolder) || !lastSelectedFolder.getMAPIStore().isDefaultStore() && isDefaultFolder) {
+		//Select 'All folders' by default when the selected folders is from the inbox folder and
+		//select current selected folder other than own "Inbox".
+		if (folder.getDefaultFolderKey() === 'inbox' && !folder.getMAPIStore().isSharedStore()) {
+			var allFolderRecord = this.store.getAt(this.store.find('flag', Zarafa.advancesearch.data.SearchComboBoxFieldsFlags.ALL_FOLDERS));
 			this.setFolderComboValue(allFolderRecord.get('value'));
-		} else if (!isDefaultFolder || isCurrentFolderSelected) {
+		} else {
 			this.setFolderComboValue(folder.get('entryid'));
 		}
 
