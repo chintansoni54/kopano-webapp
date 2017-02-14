@@ -94,9 +94,14 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 
 		// Events registered on Advance Search field.
 		this.searchToolbar.mon(this.searchToolbar.getAdvanceSearchField(),{
-			render : this.onRenderAdvanceSearchTextField,
+			render : this.onRenderSearchTextField,
 			start : this.onSearchStart,
 			stop : this.onSearchStop,
+			scope : this
+		});
+
+		this.searchToolbar.mon(this.searchToolbar.getSearchFolderCombo(),{
+			render : this.onRenderSearchFolderCombo,
 			scope : this
 		});
 
@@ -136,9 +141,10 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	 */
 	onBeforeCloseContentPanel : function(contentPanel)
 	{
-		var parentSearchField = this.resetParentSearchField();
+		this.resetParentSearchField();
+		var parentSearchField = this.searchContentPanel.getParentSearchField();
 		if (parentSearchField) {
-			parentSearchField.renderedSearchPanel = false;
+			parentSearchField.searchPanelRendered = false;
 		}
 
 		/**
@@ -189,23 +195,20 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	onModelSearchFinished : function(model)
 	{
 		this.resetParentSearchField();
-		this.searchToolbar.getAdvanceSearchField().doStop(true);
+		this.searchToolbar.getAdvanceSearchField().hideMask();
 	},
 
 	/**
-	 * Function was reset the parent context search field if parent context has.
-	 * @return {Zarafa.common.ui.SearchField | Boolean} return {@link Zarafa.common.ui.SearchField search field} if
-	 * parent context has search field else return false.
+	 * Function is reset the {@link Zarafa.common.searchfield.ui.SearchTextField SearchTextField}
+	 * if parent context has.
 	 */
 	resetParentSearchField : function()
 	{
 		var parentSearchField = this.searchContentPanel.getParentSearchField();
 		if (Ext.isDefined(parentSearchField)) {
 			parentSearchField.reset();
-			parentSearchField.doStop(false);
-			return parentSearchField;
+			parentSearchField.hideMask();
 		}
-		return false;
 	},
 
 	/**
@@ -227,7 +230,7 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	onModelSearchException : function(model, proxy, type, action, options, response, args)
 	{
 		var searchTextfield = this.searchToolbar.getAdvanceSearchField();
-		searchTextfield.doStop(false);
+		searchTextfield.hideMask();
 		searchTextfield.focus();
 	},
 
@@ -235,7 +238,7 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	 * Function will be used to start actual search on {@link Zarafa.core.data.ListModuleStore ListModuleStore},
 	 * and also it will register event on {@link Zarafa.core.data.ListModuleStore ListModuleStore} to get
 	 * updated status of search.
-	 * @param {Zarafa.common.ui.SearchField} advanceSearchField the advance search field which
+	 * @param {Zarafa.common.searchfield.ui.SearchTextField} advanceSearchField the advance search field which
 	 * performs the search.
 	 * @private
 	 */
@@ -250,7 +253,8 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 		}
 
 		var restriction = this.searchToolBox.createRestriction(searchText);
-		var folder = container.getHierarchyStore().getFolder(advanceSearchField.getFolderComboValue());
+		var searchFolderCombo = this.searchToolbar.getSearchFolderCombo();
+		var folder = container.getHierarchyStore().getFolder(searchFolderCombo.getValue());
 		this.model.startSearch(restriction , folder.isIPMSubTree(), {'folder' : folder});
 
 		// if search is performed from the parent search field then, it will set the search tab
@@ -280,10 +284,10 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	onAfterRenderSearchToolBox : function()
 	{
 		var searchField = this.searchToolbar.getAdvanceSearchField();
-		searchField.renderedSearchPanel = this.rendered;
+		searchField.searchPanelRendered = this.rendered;
 
 		// Trigger search operation.
-		searchField.onTrigger2Click();
+		searchField.onTriggerClick();
 	},
 
 	/**
@@ -292,28 +296,38 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 	 */
 	onAfterUpdateRestriction : function()
 	{
-		this.searchToolbar.getAdvanceSearchField().onTrigger2Click();
+		this.searchToolbar.getAdvanceSearchField().onTriggerClick();
 	},
 
 	/**
-	 * Event handler triggers when {@link Zarafa.common.ui.SearchField searchField}
+	 * Event handler triggers when {@link Zarafa.common.searchfield.ui.SearchTextField SearchTextField}
 	 * gets render and also it will set the search text in search field.
-	 * @param {Zarafa.common.ui.SearchField} advanceSearchField the advance search field which
-	 * performs the search.
+	 *
+	 * @param {Zarafa.common.searchfield.ui.SearchTextField} searchTextField the search text field which
+	 * contains the search string.
 	 */
-	onRenderAdvanceSearchTextField : function(advanceSearchField)
+	onRenderSearchTextField : function(searchTextField)
 	{
-		advanceSearchField.setValue(this.searchText);
-		var parentSearchField = this.searchContentPanel.getParentSearchField();
-		advanceSearchField.store.clearData();
-		parentSearchField.store.getRange().forEach(function (record) {
-			advanceSearchField.store.add(record.copy());
+		searchTextField.setValue(this.searchText);
+	},
+
+	/**
+	 * Event handler triggers when {@link Zarafa.common.searchfield.ui.SearchFolderCombo SearchFolderCombo}
+	 * is render. it will update the {@link Zarafa.common.searchfield.ui.SearchFolderCombo SearchFolderCombo}
+	 * store with parent search folder
+	 *
+	 * @param {Zarafa.common.searchfield.ui.SearchTextField} searchTextField the search text field which
+	 * contains the search string.
+	 */
+	onRenderSearchFolderCombo : function(searchFolderCombo)
+	{
+		searchFolderCombo.store.clearData();
+		var parentSearchFolderCombo = this.searchContentPanel.getParentSearchFolderCombo();
+		parentSearchFolderCombo.store.getRange().forEach(function (record) {
+			searchFolderCombo.store.add(record.copy());
 		});
-		advanceSearchField.view.refresh();
-		var parentSearchDropDownValue = parentSearchField.getFolderComboValue();
-		if (!Zarafa.core.EntryId.compareEntryIds(parentSearchDropDownValue ,advanceSearchField.getFolderComboValue())) {
-			advanceSearchField.setFolderComboValue(parentSearchDropDownValue);
-		}
+
+		searchFolderCombo.setValue(parentSearchFolderCombo.getValue());
 	},
 
 	/**
