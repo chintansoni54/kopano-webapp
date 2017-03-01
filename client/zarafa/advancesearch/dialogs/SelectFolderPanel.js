@@ -10,11 +10,12 @@ Ext.namespace('Zarafa.advancesearch.dialogs');
  */
 Zarafa.advancesearch.dialogs.SelectFolderPanel = Ext.extend(Ext.Panel, {
 	/**
-	 * {@link Zarafa.common.ui.SearchField SearchField} which triggers the search operation.
+	 * {@link Zarafa.common.searchfield.ui.SearchFolderCombo SearchFolderCombo} contains the search folders
+	 * which used in search operation.
 	 * @type Object
-	 * @property searchField
+	 * @property searchFolderCombo
 	 */
-	searchField : undefined,
+	searchFolderCombo : undefined,
 
 	/**
 	 * @constructor
@@ -24,7 +25,6 @@ Zarafa.advancesearch.dialogs.SelectFolderPanel = Ext.extend(Ext.Panel, {
 	{
 		config = config || {};
 
-		this.searchField = config.searchField;
 		Ext.applyIf(config, {
 			xtype : 'zarafa.selectfolderpanel',
 			layout: {
@@ -32,6 +32,7 @@ Zarafa.advancesearch.dialogs.SelectFolderPanel = Ext.extend(Ext.Panel, {
 				align: 'stretch'
 			},
 			border: false,
+			searchFolderCombo : config.searchFolderCombo,
 			header: false,
 			items: [
 				this.createTreePanel()
@@ -127,7 +128,7 @@ Zarafa.advancesearch.dialogs.SelectFolderPanel = Ext.extend(Ext.Panel, {
 	onTreeNodeLoad : function()
 	{
 		// Select folder in hierarchy tree.
-		var folder = container.getHierarchyStore().getFolder(this.searchField.getFolderComboValue());
+		var folder = container.getHierarchyStore().getFolder(this.searchFolderCombo.getValue());
 
 		// If the folder could be selected, then unregister the event handler.
 		if (this.hierarchyTree.selectFolderInTree(folder)) {
@@ -150,7 +151,7 @@ Zarafa.advancesearch.dialogs.SelectFolderPanel = Ext.extend(Ext.Panel, {
 			return;
 		}
 
-		var store = this.searchField.store;
+		var store = this.searchFolderCombo.getStore();
 		var record = store.getAt(store.findExact("value", folder.get('entryid')));
 		if (!Ext.isDefined(record)) {
 			var importedFolderFlag = Zarafa.advancesearch.data.SearchComboBoxFieldsFlags.IMPORTED_FOLDER;
@@ -161,11 +162,10 @@ Zarafa.advancesearch.dialogs.SelectFolderPanel = Ext.extend(Ext.Panel, {
 				'name' : folder.get('display_name'),
 				'value' : folder.get('entryid'),
 				'flag' : importedFolderFlag
-			},folder.get('entryid'));
+			});
 			store.insert(0, record);
 		}
-		var recordIndex = store.find('value', record.get('value'));
-		this.searchField.select(recordIndex, true);
+		this.searchFolderCombo.setValue(record.get('value'));
 		this.dialog.close();
 	},
 

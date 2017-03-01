@@ -49,9 +49,9 @@ Zarafa.common.ui.ContextMainPanelToolbar = Ext.extend(Ext.Toolbar, {
 		var items = [];
 
 		items = items.concat({
-			xtype : 'zarafa.searchfield',
+			xtype : 'zarafa.searchfieldcontainer',
 			boxMinWidth: 100,
-			ref : 'searchTextfield',
+			ref : 'searchFieldContainer',
 			model : config.model
 		});
 
@@ -135,7 +135,7 @@ Zarafa.common.ui.ContextMainPanelToolbar = Ext.extend(Ext.Toolbar, {
 
 		var itemWidth = 0;
 		Ext.each(toolbar.items.items, function(item, index, array){
-			if(!item.isXType('zarafa.searchfield') && item.rendered) {
+			if(!item.isXType('zarafa.searchfieldcontainer') && item.rendered) {
 				if(item.isVisible()) {
 					itemWidth += item.getWidth();
 				} else if(Ext.isDefined(item.xtbHidden) && item.xtbHidden) {
@@ -152,7 +152,7 @@ Zarafa.common.ui.ContextMainPanelToolbar = Ext.extend(Ext.Toolbar, {
 			}, this);
 		}
 
-		toolbar.searchTextfield.setWidth(width - (itemWidth));
+		toolbar.searchFieldContainer.searchTextField.setWidth(width - (itemWidth));
 	},
 
 	/**
