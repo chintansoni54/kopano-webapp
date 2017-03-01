@@ -83,6 +83,7 @@ Zarafa.advancesearch.dialogs.SearchToolBoxPanel = Ext.extend(Ext.Panel, {
 				xtype : 'container',
 				layout : 'vbox',
 				items : [
+					this.createFoldersFieldset(),
 					this.createMessageTypeFieldset(),
 					this.createFilterFieldset(),
 					this.createDateRangeFieldset(dateRangeStore),
@@ -101,6 +102,28 @@ Zarafa.advancesearch.dialogs.SearchToolBoxPanel = Ext.extend(Ext.Panel, {
 		);
 
 		Zarafa.advancesearch.dialogs.SearchToolBoxPanel.superclass.constructor.call(this, config);
+	},
+
+	/**
+	 * Creates the folders fieldset for search tool box of form panel.
+	 * @return {Object} config object for creating {@link Ext.form.FieldSet FieldSet}.
+	 * @private
+	 */
+	createFoldersFieldset : function()
+	{
+		return {
+			layout: 'form',
+			xtype:'fieldset',
+			width : 156,
+			border : false,
+			title: _('Folders'),
+			items : [{
+				xtype : "checkbox",
+				hideLabel : true,
+				ref : '../../includeSubFolder',
+				boxLabel : _('Include subfolders')
+			}]
+		};
 	},
 
 	/**
