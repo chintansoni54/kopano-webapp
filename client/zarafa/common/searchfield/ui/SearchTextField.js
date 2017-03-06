@@ -26,11 +26,6 @@ Zarafa.common.searchfield.ui.SearchTextField = Ext.extend(Ext.form.TextField, {
 	searchPanelRendered : false,
 
 	/**
-	 * @cfg {String} errorMsgEmpty The error text to display if the search query is empty.
-	 */
-	errorMsgEmpty : _('Please enter text to start search.'),
-
-	/**
 	 * @constructor
 	 * @param {Object} config Configuration object
 	 */
@@ -143,7 +138,7 @@ Zarafa.common.searchfield.ui.SearchTextField = Ext.extend(Ext.form.TextField, {
 	{
 		if (this.fireEvent('beforestart', this) !== false) {
 			if(Ext.isEmpty(this.getValue())) {
-				container.getNotifier().notify('error.search', _('Error'), this.errorMsgEmpty);
+				this.focus();
 				return false;
 			}
 
