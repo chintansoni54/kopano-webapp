@@ -34,10 +34,17 @@ Zarafa.common.searchfield.ui.SearchTextField = Ext.extend(Ext.form.TextField, {
 		Ext.apply(config, {
 			validationEvent : false,
 			validateOnBlur : false,
-			emptyText : _('Search in..'),
 			cls: 'zarafa-searchfield',
 			boxMaxWidth: 450,
-			ref : 'searchTextField'
+			ref : 'searchTextField',
+			listeners: {
+				afterrender: function(searchField){
+					searchField.getEl().set({
+						placeholder: _('Search in..')
+					});
+				},
+				scope: this
+			}
 		});
 
 		this.addEvents(
