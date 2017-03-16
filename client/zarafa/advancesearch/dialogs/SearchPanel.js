@@ -92,6 +92,12 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 			scope : this
 		});
 
+		this.mon(this.searchToolBox.includeSubFolder, {
+			check : this.onCheckIncludeSubFolder,
+			render : this.onRenderSubFolderCheckbox,
+			scope : this
+		});
+
 		// Events registered on Advance Search field.
 		this.searchToolbar.mon(this.searchToolbar.getAdvanceSearchField(),{
 			render : this.onRenderSearchTextField,
@@ -102,6 +108,8 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 
 		this.searchToolbar.mon(this.searchToolbar.getSearchFolderCombo(),{
 			render : this.onRenderSearchFolderCombo,
+			select : this.onSelectSearchFolderComboValue,
+			beforeselect : this.onBeforeSelectSearchFolder,
 			scope : this
 		});
 
@@ -255,7 +263,11 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 		var restriction = this.searchToolBox.createRestriction(searchText);
 		var searchFolderCombo = this.searchToolbar.getSearchFolderCombo();
 		var folder = container.getHierarchyStore().getFolder(searchFolderCombo.getValue());
-		this.model.startSearch(restriction , folder.isIPMSubTree(), {'folder' : folder});
+
+		var record = searchFolderCombo.findRecord('value', searchFolderCombo.getValue());
+		var includeSubFolders = record.get('include_subfolder');
+
+		this.model.startSearch(restriction , includeSubFolders, {'folder' : folder});
 
 		// if search is performed from the parent search field then, it will set the search tab
 		// to active tab.
@@ -328,6 +340,98 @@ Zarafa.advancesearch.dialogs.SearchPanel = Ext.extend(Ext.Panel, {
 		});
 
 		searchFolderCombo.setValue(parentSearchFolderCombo.getValue());
+	},
+
+	/**
+	 * Event handler triggered when selection was performed on
+	 * {@link Zarafa.common.searchfield.ui.SearchFolderCombo SearchFolderCombo}.
+	 * function was used to check/un-check "Include sub folder" checkbox which belongs to
+	 * {@link Zarafa.advancesearch.dialogs.SearchToolBoxPanel SearchToolBox}.
+	 *
+	 * @param {Zarafa.common.searchfield.ui.SearchFolderCombo} combo The combo box which fired the event.
+	 * @param {Ext.data.Record} record The data record returned from the underlying store
+	 * @param {number} index The index of the selected item in the drop down list
+	 */
+	onSelectSearchFolderComboValue : function(combo, record, index)
+	{
+		var subFolderCheckBox = this.searchToolBox.includeSubFolder;
+		subFolderCheckBox.setValue(record.get('include_subfolder'));
+		this.onRenderSubFolderCheckbox(subFolderCheckBox);
+	},
+
+	/**
+	 * Event handler triggered when "Include sub folder" checkbox which belongs to
+	 * {@link Zarafa.advancesearch.dialogs.SearchToolBoxPanel SearchToolBox}
+	 *  was checked/un-checked. it will also update the "include_subfolder" property of
+	 * {@link Ext.data.Record searchFolder} record of search folder combo box.
+	 *
+	 * @param {Ext.form.Checkbox} checkbox The checkbox which fired the event
+	 * @param {Boolean} check True if the checkbox is currently checked
+	 * @private
+	 */
+	onCheckIncludeSubFolder : function (checkBox, checked)
+	{
+		var searchFolderCombo = this.searchToolbar.getSearchFolderCombo();
+		var record = searchFolderCombo.findRecord('value', searchFolderCombo.getValue());
+
+		if (checked !== record.get('include_subfolder')) {
+			record.set('include_subfolder', checked);
+			record.commit();
+			this.searchToolBox.afterUpdateRestriction();
+		}
+	},
+
+	/**
+	 * Event handle triggered when "Include sub folder" checkbox which belongs to
+	 * {@link Zarafa.advancesearch.dialogs.SearchToolBoxPanel SearchToolBox} was rendered
+	 * also it will call when search folder change in {@link Zarafa.common.searchfield.ui.SearchFolderCombo SearchFolderCombo}.
+	 * Also function is responsible to disable "Include sub folder" check box
+	 * and apply the tooltip when "All folders" option in {@link Zarafa.common.searchfield.ui.SearchFolderCombo SearchFolderCombo}
+	 * is selected else enable checkbox and remove the tooltip from "Include Sub folder" checkbox.
+	 *
+	 * @param {Ext.form.Checkbox} checkBox The checkbox which was rendered.
+	 */
+	onRenderSubFolderCheckbox : function (checkBox)
+	{
+		var searchFolderCombo = this.searchToolbar.getSearchFolderCombo();
+		var record = searchFolderCombo.findRecord('value', searchFolderCombo.getValue());
+		var isAllFolderSelected = record.get('flag') === Zarafa.advancesearch.data.SearchComboBoxFieldsFlags.ALL_FOLDERS;
+		checkBox.setDisabled(isAllFolderSelected);
+		checkBox.setValue(record.get('include_subfolder'));
+
+		if(checkBox.rendered) {
+			// Add tooltip on "include sub folder" check box when "All folders"
+			// was selected in search folder combo box else remove tooltip from
+			// "include sub folder" check box
+			if (isAllFolderSelected) {
+				checkBox.wrap.dom.qtip = _("All folders are selected");
+			} else {
+				delete(checkBox.wrap.dom.qtip);
+			}
+		}
+	},
+
+	/**
+	 * Event handler triggered before selection performs in {@link Zarafa.common.searchfield.ui.SearchFolderCombo SearchFolderCombo}
+	 * Will open {@link Zarafa.advancesearch.dialogs.SelectFolderContentPanel SelectFolderContentPanel}, if
+	 * "Other.." option was selected.
+	 *
+	 * @param {Zarafa.common.searchfield.ui.SearchFolderCombo} combo The combo which fired the event.
+	 * @param {Ext.data.Record} record The data record returned from the underlying store
+	 * @param {number} index The index of the selected item in the dropdown list
+	 * @return {boolean} true if selected record is not 'Other...' else false.
+	 */
+	onBeforeSelectSearchFolder : function (combo, record, index)
+	{
+		if(record.get('value') === 'other') {
+			combo.collapse();
+			Zarafa.advancesearch.Actions.openSelectSearchFolderDialog({
+				searchFolderCombo : combo,
+				searchToolBoxIncludeSubFolder : this.searchToolBox.includeSubFolder
+			});
+			return false;
+		}
+		return true;
 	},
 
 	/**

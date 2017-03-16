@@ -46,14 +46,16 @@ Zarafa.common.searchfield.ui.SearchFolderCombo = Ext.extend(Ext.form.ComboBox, {
 		var searchFolderStore = new Ext.data.JsonStore({
 			idIndex: 0,
 			idProperty: 'value',
-			fields: ['name', 'value', 'flag'],
+			fields: ['name', 'value', 'flag', 'include_subfolder'],
 			data : [{
 				'name' : _('All folders'),
 				'value' : subtreeEntryid,
+				'include_subfolder' : true,
 				'flag' : Zarafa.advancesearch.data.SearchComboBoxFieldsFlags.ALL_FOLDERS
 			},{
 				'name' : Ext.util.Format.htmlEncode(folderName),
 				'value' : folderEntryid,
+				'include_subfolder' : false,
 				'flag' : Zarafa.advancesearch.data.SearchComboBoxFieldsFlags.CURRENT_SELECTED_FOLDER
 			},{
 				'name' : _('Other...'),
@@ -199,6 +201,7 @@ Zarafa.common.searchfield.ui.SearchFolderCombo = Ext.extend(Ext.form.ComboBox, {
 		currentFolder.beginEdit();
 		currentFolder.set("name", folder.getDisplayName());
 		currentFolder.set("value", folder.get('entryid'));
+		currentFolder.set("include_subfolder", false);
 		currentFolder.id = folder.get('entryid');
 		currentFolder.endEdit();
 		currentFolder.commit();
